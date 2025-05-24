@@ -1,0 +1,62 @@
+Affiliation: Open.Make / LarkumLab - Humboldt-Universität zu Berlin
+Authors:
+  - Fabio Reeh
+  - Julien Colomb
+  - to add
+AutoCompleteSubNav: true
+DefaultCategory: part
+Email: fabio.reeh@hu-berlin.de
+HoverColor: '#555555'
+PageBOMTitle: '##For this section you will need'
+PrimaryColor: '#f1502f'
+RemoveImagesBackground: true
+RemoveImagesBorder: true
+SecondaryColor: '#cccccc'
+Title: Airtrack v2
+WebsiteRoot: /path/website
+LandingPage: index.md
+IncludeSearch: true
+# Recommended information
+Authors:
+    - Fabio Reeh
+    - Julien Colomb
+    - to add
+
+Affiliation: Open.Make / LarkumLab - Humboldt-Universität zu Berlin
+
+#License: xxxx
+
+Email: xxxx
+
+
+#Uncomment below to add custom categories
+CustomCategories:
+    printedtool:
+        Reuse: False
+        DisplayName: Printed tools
+
+#Uncomment below to set a custom default category
+#DefaultCategory: printedtool
+
+#Uncomment below to set the title for the bill of material on a page
+PageBOMTitle: '##For this section you will need'
+
+#Uncomment below to override the project title
+Title: 'Airtrack v2'
+
+#Uncomment below to set a custom Website root for static HTML builds
+WebsiteRoot: '/path/website'
+
+#Uncomment below to disable fussy warnings
+#Fussy: False
+
+#Uncomment below to disable search functionality in the output
+#IncludeSearch: False
+
+AutoCompleteSubNav: true
+DefaultCategory: part
+HoverColor: '#555555'
+PrimaryColor: '#f1502f'
+RemoveImagesBackground: true
+RemoveImagesBorder: true
+SecondaryColor: '#cccccc'
