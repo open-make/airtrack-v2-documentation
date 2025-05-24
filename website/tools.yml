@@ -1,0 +1,92 @@
+acrifix_192:
+    Name: Acrifix 192 
+    Description: Glue - no precise amount needed
+    Suppliers:
+        Modulor:
+            PartNo: 0154916
+            Link: 'https://www.modulor.de/en/acrifix-192-acrylic-glue.html'
+        Rexin Gmbh:
+            PartNo: PLE99000
+            Link: 'https://www.rexin-shop.de/zubehoer/kleber-politur-und-co/plexiglas-kleber-acrifix-192-100g'
+
+screwdriver:
+    Name: Screwdriver
+    Description: A tool to drive screws with a max. torque around 50-100 Nm
+
+1mmdrill:
+    Name: 1 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas
+
+1_5mmdrill:
+    Name: 1.5 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas 
+
+2mmdrill:
+    Name: 2 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas
+
+
+3mmdrill:
+    Name: 3 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas 
+
+4mmdrill:
+    Name: 4 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas 
+
+
+5mmdrill:
+    Name: 5 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas 
+
+
+7mmdrill:
+    Name: 7 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas
+
+8mmdrill:
+    Name: 8 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas 
+
+9mmdrill:
+    Name: 9 mm drill
+    Description: A drill specific for acyrlglass or a metall drill with similar angles as for acrylglas 
+
+
+M5thread_drill:
+    Name: M5 thread drill
+    Description: A thread drill specific for aluminium with a M5 thread 
+
+
+G1_8_thread_drill:
+    Name: G 1/8" thread drill
+    Description: A thread drill specific for a G/R 1/8" thread (Withworth)
+
+G1_4_thread_drill:
+    Name: G 1/4" thread drill
+    Description: A thread drill specific for a G/R 1/4" thread (Withworth)
+
+1_4_thread_drill:
+    Name:  1/4" thread drill
+    Description: A thread drill specific for a 1/4" thread
+
+
+ 
+
+metallsaw:
+    Name: Metall saw
+    Description: Saw with a saw blade appropriate for aluminium. In order to achieve a good orthogonal angle at the cut surfaces, the use of a big saw, or better a circular bench saw, is recommended. (The use of smaller hand saws requires a lot of endurance and precision.)
+
+drillrig:
+    Name: Drill rig
+    Description: A stand for a drilling machine with adjustable depth
+
+
+sandingsponge:
+    Name: sanding sponge
+    Description: A sponge to sand sharp metall endings
+
+
+soldering:
+    Name: soldering station
+    Description: A soldering station for small components

@@ -1,0 +1,105 @@
+5mmNuts_angle:
+    Name: Frame Angle
+    Description: 5mm Frame angle
+    Specs:
+        Material: EN AC-46100 equivalent
+    Suppliers:
+        Misumi:
+            PartNo: HBLFSNF5-C-SSP
+            Link: 'https://de.misumi-ec.com/vona2/detail/110300437260/?HissuCode=HBLFSNF5-C-SSP'
+        Conrad:
+            PartNo: TC-10493184
+            Link: 'https://www.conrad.de/de/p/tru-components-bracket-2020-tc-10493184-verstaerkung-90-aluminium-1-st-2623296.html?searchType=SearchRedirect&refresh=true#productDescription'
+
+5mmNuts:
+    Name: Frame nut 
+    Description: 5mm Nut with M5 (for 20mm frame)
+    Specs:
+        Material: Zinc plated stell (Ball Stainless Steel)
+    Suppliers:
+        RS Components:
+            PartNo: 180-9104
+            Link: 'https://de.rs-online.com/web/p/verbindungselemente/1809104'
+
+4mmNuts:
+    Name: Frame nut 
+    Description: 5mm Nut with M4 (for 20mm frame)
+    Specs:
+        Material: Zinc plated stell (Ball Stainless Steel)
+    Suppliers:
+        RS Components:
+            PartNo: 180-9103
+            Link: 'https://de.rs-online.com/web/p/verbindungselemente/1809103'
+
+
+
+12mmCC:
+    Name: Connecting Clamp
+    Description: Twistable Two-Way Connecting Clamp for 12 mm rods - If it's to thin, open it mechanically a bit up
+    Specs:
+        Material: Aluminium
+    Suppliers:
+        RS Components:
+            PartNo: 786-6071
+            Link: 'https://de.rs-online.com/web/p/verbindungselemente/7866071'
+
+R_1_4_R_1_4_reducing_fitting:
+    Name: Reducing fitting 
+    Description: Reducing fitting with R 1/4" on both sides
+    Specs:
+        Material: Stainless Steel AISI 316
+    Suppliers:
+        Hans Joachim SCHNEIDER GmbH:
+            PartNo: EA244205I
+            Link: 'https://shop.schneider-berlin.de/Technisches-Zubehoer/Installationsmaterial/Gewinde-Verschraubungen/Doppelnippel/Doppelnippel-Edelstahl-AISI-316-R-1-4-x-R-1-4.html'
+
+
+SV_Ges_8_R_1_8:
+    Name: hose connection gland
+    Description: hose connection gland for 8 mm inner diameter tubes
+    Specs:
+        Material: Plastic
+    Suppliers:
+        Norma Group:
+            PartNo: 07108910008
+            Link: 'https://shop.normagroup.com/de_de/norma-sv-ges-8-r-1-8-07108910008.html#tab-label-description'
+
+YS_Ges_8:
+    Name: hose connector
+    Description: hose connector for 8 mm inner diameter tubes
+    Specs:
+        Material: Plastic
+    Suppliers:
+        Norma Group:
+            PartNo: 0770 8900 008
+            Link: 'https://shop.normagroup.com/de_de/norma-sv-ys-0770.html'
+
+pressure_relief_valve:
+    Name: Pressure relief valve
+    Description: Releases air if the pressure inside is to high
+    Suppliers:
+        RS Components:
+            PartNo: 210-8443
+            Link: 'https://de.rs-online.com/web/p/pneumatik-druckentlastungsventile/2108443'
+
+compressed_air_hose:
+    Name: Compressed air hose
+    Description: Inner diameter 8mm, outer diameter 10mm
+    Specs:
+        Material: polyurethane
+
+cable_tie:
+    Name: Cable tie
+    Description: 10cm in length and 2,5cm in width
+    Specs:
+        Material: Polypropylene
+    Suppliers:
+        Distrelec:
+            PartNo: 301-41-528
+            Link: 'https://www.distrelec.de/en/cable-tie-99-5mm-polypropylene-49n-black-panduit-plt1m-m100/p/30141528?trackQuery=cat-DNAV_PL_2225543&pos=1&origPos=9&origPageSize=50&filterapplied=filter_Length~~mm%3d99&track=true'
+
+cannula_con_set:
+    Name: Luer to Tube Connector Kit
+    Description: The Luer Connector Kit contains a selection of Luer fittings to interconnect Luer connectors (e.g. syringes, stopcocks and needles) with one another and with tubing. These kits are available in white nylon (WN), polypropylene (PP) and Kynar® (KY), a chemically resistant autoclavable plastic.
+    Specs:
+        Material: White Nylon
