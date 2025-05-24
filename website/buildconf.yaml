@@ -1,37 +1,18 @@
-# Recommended information
-Authors:
-    - Fabio Reeh
-    - Julien Colomb
-    - to add
-
 Affiliation: Open.Make / LarkumLab - Humboldt-Universität zu Berlin
-
-#License: 
-
+Authors:
+  - Fabio Reeh
+  - Julien Colomb
+  - to add
 Email: fabio.reeh@hu-berlin.de
-
-
-#Uncomment below to add custom categories
-#CustomCategories:
-#    printedtool:
-#        Reuse: False
-#        DisplayName: Printed tools
-
-#Uncomment below to set a custom default category
-#DefaultCategory: printedtool
-
-#Uncomment below to set the title for the bill of material on a page
 PageBOMTitle: '##For this section you will need'
-
-#Uncomment below to override the project title
-Title: 'Airtrack v2'
-
-#Uncomment below to set a custom Website root for static HTML builds
-WebsiteRoot: '/path/website'
-
-#Uncomment below to disable fussy warnings
-#Fussy: False
-
-#Uncomment below to disable search functionality in the output
-#IncludeSearch: False
-
+Title: Airtrack v2
+WebsiteRoot: /path/website
+PrimaryColor: '#f1502f'
+SecondaryColor: '#cccccc'
+HoverColor: '#555555'
+RemoveImagesBorder: true
+RemoveImagesBackground: true
+Fussy: true
+IncludeSearch: true
+AutoCompleteSubNav: true
+LandingPage: index.md
