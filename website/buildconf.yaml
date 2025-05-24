@@ -12,10 +12,10 @@ Email: xxxx
 
 
 #Uncomment below to add custom categories
-#CustomCategories:
-#    printedtool:
-#        Reuse: False
-#        DisplayName: Printed tools
+CustomCategories:
+    printedtool:
+        Reuse: False
+        DisplayName: Printed tools
 
 #Uncomment below to set a custom default category
 #DefaultCategory: printedtool
@@ -27,7 +27,7 @@ PageBOMTitle: '##For this section you will need'
 Title: 'Airtrack v2'
 
 #Uncomment below to set a custom Website root for static HTML builds
-#WebsiteRoot: '/path/website'
+WebsiteRoot: '/path/website'
 
 #Uncomment below to disable fussy warnings
 #Fussy: False
