@@ -35,3 +35,12 @@ WebsiteRoot: '/path/website'
 #Uncomment below to disable search functionality in the output
 #IncludeSearch: False
 
+AutoCompleteSubNav: true
+DefaultCategory: part
+HoverColor: '#555555'
+PrimaryColor: '#f1502f'
+RemoveImagesBackground: true
+RemoveImagesBorder: true
+SecondaryColor: '#cccccc'
+
+
