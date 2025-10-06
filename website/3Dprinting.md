@@ -1,6 +1,12 @@
 # Peripherals part 5: Floating platform
 
 
+
+>! **to add** 
+>!
+>! aruco marker and light conditions
+
+
 {{BOM}}
 
 

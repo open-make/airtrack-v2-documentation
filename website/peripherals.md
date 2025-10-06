@@ -2,10 +2,13 @@
 
 The air table is the core of the Airtrack. In order to use it you need several mounts and devices around it. The attachment of these is described in the following. If your research question varies you might want to attach more or other devices.
 
+## Additional framework {pagestep}
+
+Follow the [instruction](add_framework.md) to add an additional framework for mounting.
+
 ## Attachment of the camera {pagestep}
 
 Follow the [instruction](headandcamera.md) to mount the PixyCam2.
-
 
 ## Linear actuator {pagestep}
 

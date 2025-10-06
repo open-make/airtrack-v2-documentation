@@ -3,16 +3,16 @@ Authors:
   - Fabio Reeh
   - Julien Colomb
   - to add
-Email: fabio.reeh@hu-berlin.de
-PageBOMTitle: '##For this section you will need'
-Title: Airtrack v2
-WebsiteRoot: /path/website
-PrimaryColor: '#f1502f'
-SecondaryColor: '#cccccc'
-HoverColor: '#555555'
-RemoveImagesBorder: true
-RemoveImagesBackground: true
-Fussy: true
-IncludeSearch: true
 AutoCompleteSubNav: true
+Email: fabio.reeh@hu-berlin.de
+Fussy: true
+HoverColor: '#555555'
+IncludeSearch: true
 LandingPage: index.md
+PageBOMTitle: '##For this section you will need'
+PrimaryColor: '#f1502f'
+RemoveImagesBackground: true
+RemoveImagesBorder: true
+SecondaryColor: '#cccccc'
+Title: Airtrack - Bpod version
+WebsiteRoot: /path/website

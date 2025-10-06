@@ -7,6 +7,14 @@ We usually get this construction done in the workshop, because they have better 
 >!!
 >!! The upper part of the air table should be screwed and the lower part only glued. In the case of malfunction with the air pressure, the lower part will break. That limits the risk of injuries.
 
+
+The Airtrack should be placed on a optical table with pneumatic isolation. We have several in the Lab and use one of these. 
+The table needs M6 taps with a distance of XXXX between the taps. If you want to have the Airtrack transportable you could use a [Thorlabs optical breadboard](thorlabs_parts.yml#75x75_breadboard){qty: 1, cat: part} as a base plate. This breadboard has the same depth and tap distance as our optical table. We have the Airtrack currently at a Vision IsoStation from Newport. 
+
+
+
+
+
 ## Precut of aluminium strut profiles {pagestep}
 
 Follow the [instruction](precut.md) to prepare the top and side plexiglass plates.
@@ -38,5 +46,7 @@ Follow the [instruction](ballvalve.md) to build the ball valves and insert them.
 
 Follow the [instruction](air_flow.md) to set up the air flow.
 
+## Mounting the air table legs  {pagestep}
 
+Follow the [instruction](airtable_legs.md) to add the air table legs.
 

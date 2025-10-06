@@ -1,0 +1,65 @@
+75x75_breadboard:
+    Name: Aluminum Breadboard
+    Description:  Solid aluminum optical breadboard with M6 taps
+    Specs:
+        Material: Aluminium
+        Size: 750mm x 750mm x 12.7mm
+    Suppliers:
+        Thorlabs:
+            PartNo: MB7575/M
+            Link: 'https://www.thorlabs.de/thorproduct.cfm?partnumber=MB7575/M'
+
+
+tr50m:
+    Name: TR50/M - Ø12.7 mm Optical Post, L = 50 mm
+    Description:  Optical Post with one M4 tapped hole at top and one M6 tapped hole at base
+    Specs:
+        Material: Stainless steel
+    Suppliers:
+        Thorlabs:
+            PartNo: TR50/M
+            Link: 'https://www.thorlabs.com/thorproduct.cfm?partnumber=TR50/M'
+
+
+
+tr100m:
+    Name: TR100/M - Ø12.7 mm Optical Post, L = 100 mm
+    Description:  Optical Post with one M4 tapped hole at top and one M6 tapped hole at base
+    Specs:
+        Material: Stainless steel
+    Suppliers:
+        Thorlabs:
+            PartNo: TR100/M
+            Link: 'https://www.thorlabs.com/thorproduct.cfm?partnumber=TR100/M'
+
+
+
+ra90m:
+    Name: Right-Angle Clamp for Ø1/2" Posts
+    Specs:
+        Material: Stainless steel
+    Suppliers:
+        Thorlabs:
+            PartNo: RA90/M
+            Link: 'https://www.thorlabs.com/thorproduct.cfm?partnumber=RA90/M'
+
+
+
+hwkit2m:
+    Name: HW-KIT2/M - M6 Cap Screw and Hardware Kit 
+    Description: Kit with multiple M6 screw lengths and 20mm M6 threaded rod
+    Specs:
+        Material: Stainless steel
+    Suppliers:
+        Thorlabs:
+            PartNo: HW-KIT2/M
+            Link: 'https://www.thorlabs.com/thorproduct.cfm?partnumber=HW-KIT2/M'
+
+
+
+
+
+
+
+
+
