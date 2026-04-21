@@ -17,6 +17,8 @@ Above the air table a camera is placed to acquire the images for the marker trac
 
 ### Outputs: Products and data
 
+A platform with a plus maze on top to use in the Airtrack.
+
 ### cost
 
 ### validation
@@ -25,7 +27,7 @@ Above the air table a camera is placed to acquire the images for the marker trac
 
 
 
-## dependencies
+## Dependencies
 indicate and cite projects this project is built on
 For the software part, indicate the main component, use a dependency.txt files in the software folder when needed.
 
@@ -33,6 +35,7 @@ For the software part, indicate the main component, use a dependency.txt files i
 
 ## Documentation structure
 
+Description of the platform
 
 # Hardware details
 
@@ -46,11 +49,22 @@ For the software part, indicate the main component, use a dependency.txt files i
 
 ## Manufacturing instructions
 
+3D printer required
+
 - skills
 - tools
 - link to instructions
 
 ## Assembly instructions
+
+Get a 30cm circle of a materials as thin and stable as possible. Slight bending over time will increase the friction significant. Carbon is recommended. On top of the platform glue the plus maze. Attached are the files for the walls and wall mounts. It is recommended to place the wall mounts or walls and wall mounts on a thin 3D printed layer of the full maze to have more glueing surface. The walls need to be glued if not directly printed together as mice learning to kick them out.
+
+
+3D part files:
+
+l_Maze_X_wallmount.stl
+l_Maze_X_walls.stl
+
 
 - skills
 - tools
