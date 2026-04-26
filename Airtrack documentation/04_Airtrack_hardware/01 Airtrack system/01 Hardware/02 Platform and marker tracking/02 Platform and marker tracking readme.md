@@ -35,7 +35,9 @@ For the software part, indicate the main component, use a dependency.txt files i
 
 ## Documentation structure
 
-Description of the platform
+1. Description of the platform
+
+2. Tracking of the platform
 
 # Hardware details
 
@@ -59,6 +61,11 @@ Description of the platform
 
 Get a 30cm circle of a materials as thin and stable as possible. Slight bending over time will increase the friction significant. Carbon is recommended. On top of the platform glue the plus maze. Attached are the files for the walls and wall mounts. It is recommended to place the wall mounts or walls and wall mounts on a thin 3D printed layer of the full maze to have more glueing surface. The walls need to be glued if not directly printed together as mice learning to kick them out.
 
+To track the platform 4 Aruco markers (7cm x 7cm, IDs: 1,2,3,4) need to be placed on the platform - one between each lane. To not change the corresponding scripts the markers need to be place 1,4,2 and 3 clockwise. 
+
+2. Tracking of the platform
+
+In order to track the platform place a Basler camera (ace acA1300-200um) central front and turn it to have the x axis along the long side of the air table. The x axis needs to be low at the front and high at the back. The camera should more or less capture only the air table.
 
 3D part files:
 

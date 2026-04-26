@@ -54,6 +54,31 @@ For the software part, indicate the main component, use a dependency.txt files i
 
 ## Assembly instructions
 
+1. Cue 
+
+Use some Thorlabs 1/2" rods and adjustable 1/2" angles to place two white LEDs to the left and right in front of the mouse. Keep a distance of 5-8cm and an angle of 45 degree to left and right. 
+
+Let the Thorlabs rods reach from the edges of the air table in front of the mouse inwards.
+
+The image reward_cue.jpg shows the motor front with the reward spot (and lickety split as a holder and lick detection).
+
+2. Motor
+
+If you placed one vertical 3/2" rod at the air table side in front at the mouse, you can use that along Thorlabs angles and rods to fixate the end of the of the motor.
+
+For the front fixation use Thorlabs rods angles and a smallRig clamp.
+
+The motor back needs to be about 50cm above the table and with full extension the licking spout should reach the mouse.
+The downwards angle of the motor need to be about 30 to 45 degree to retract high enough within a second to not hit the wall anymore.
+
+
+3. Reward
+
+The licking spout and lick detection is should be connected via a component with 3 axis fine adjustments to the motor. This allows fine placement of the licking spout in front of the mouse without replacing the full motor.
+
+
+
+
 - skills
 - tools
 - link to instructions
