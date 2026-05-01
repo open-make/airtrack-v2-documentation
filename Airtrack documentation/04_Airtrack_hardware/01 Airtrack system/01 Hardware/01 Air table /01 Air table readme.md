@@ -9,10 +9,10 @@ Look there for more information on the context where this part was designed, as 
 
 ### Hardware overview
 
-The air table provides a surface with low fraction for a platform to move on it. The platform acts as the environment for the mouse to move around.
+The air table provides a surface with low fraction for a platform to move on it. The platform acts as environment for a mouse to move around.
 It consists out of a rectangular box with several holes in the top, some borders at the top edges, aluminum profiles at the sides and connections for incoming air.
 
-In the top holes are ball valves placed to reduce the air flow if the platform is not above the hole.
+In the top holes, ball valves are placed to reduce the air flow if the platform is not above the hole.
 The edge borders keep the platform on the air table and ensure that the platform is not shifting too much sideways. This is important for proper mouse movement.
 The aluminium profiles are used to have multiple connection points to the setup table with variability in height. 
 

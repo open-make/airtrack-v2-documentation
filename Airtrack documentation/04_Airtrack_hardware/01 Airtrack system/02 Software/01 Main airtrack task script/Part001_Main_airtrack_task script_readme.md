@@ -6,7 +6,7 @@ as well as get information on the developers and the community.
 
 To use the Airtrack one central script was developed for the behavioral task which can be used in the training and the final recording sessions. The script manages the Airtrack, saves trial information and send TTLs for synchronization with the neural recordings.
 
-The task is as follows: If the mouse is in a lane it needs to enter the left or right lane of the current lane based on a cue LED. The time is unlimited to solve the task. The entering of a wrong lane will result in a failed trail and randomly a new lane is assigned. 
+The task is as follows: If the mouse is in a lane it needs to enter the left or right lane of the current lane based on a cue LED. The time is unlimited to solve the task. The entering of a wrong lane will result in a failed trail and randomly a new lane left or right of the current is assigned. 
 
 While the script is running one can change following variables via the GUI. Variables are updated at the beginning of each trial:
 

@@ -5,7 +5,31 @@ Look there for more information on the context where this part was designed,
 as well as get information on the developers and the community.
 
 
-### hardware part summary overview
+### Hardware part summary overview
+
+For several reasons a good lighting is needed while certain lights cause malfunction. 
+To achieve good lighting for the videos while maintaining cue visibility we use the following lights:
+
+- 5x Thorlabs IR LEDs
+
+- 2x Thorlabs IR focused
+
+- Torch of red light
+
+- 3V white cue LEDs
+
+
+The IR lamps allow to have a strong illumination while being invisible for the mouse. 
+
+- No shadows on the markers - otherwise bad detection
+- Short illumination time for cameras
+
+Focused Thorlabs IR:
+
+These are focused as good as possible on the eyes to track the pupil
+
+
+
 
 ### Standard compliance
 

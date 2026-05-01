@@ -10,6 +10,7 @@ All cameras have the same configuration which is then placed in the setup. Each 
 
 The Basler USB cable and I/O cable is often very long and needs good pathing to the acquiring computer and frame trigger source.
 
+Basler USB card most likely needed for bandwidth on PC
 
 
 
@@ -58,9 +59,31 @@ For the software part, indicate the main component, use a dependency.txt files i
 
 ## Manufacturing instructions
 
-- skills
-- tools
-- link to instructions
+
+
+Camera placements (see images: whole_setup_cameras.jpg):
+
+Full setup (only one with Basler ace acA1920-155uc):
+
+Placed 40/50 cm centrally above the mouse
+
+Top view mouse:
+
+Placed above the linear actuator center with an similar angle and orientation
+
+Front view mouse:
+
+Parallel to the table at the edge of the air table front side.
+
+Eye camera (L/R):
+
+On both sides slightly outside the air table with about 10 cm to the front from the air table center sides and 20 cm elevation
+
+Whisker cameras (L/R):
+
+Placed right and left beside the linear actuator but a bit closer to the mouse and the cameras are as much as possible turned downwards.
+
+
 
 ## Assembly instructions
 

@@ -1,0 +1,753 @@
+%% --- LOGGING SETUP (configure path here) ----------------------------
+logFolder = 'C:\Users\admin\Documents\Fabio\Experiment_log_save';
+if ~exist(logFolder, 'dir')
+    mkdir(logFolder);
+end
+
+% Prompt for mouse number (alphanumeric, _ and - allowed)
+while true
+    mouseNumber = strtrim(input('Enter mouse number (e.g., M12): ', 's'));
+    if ~isempty(mouseNumber) && ~isempty(regexp(mouseNumber, '^[A-Za-z0-9_-]+$', 'once')) ...
+            && strlength(mouseNumber) <= 32
+        break;
+    else
+        fprintf('Invalid mouse number. Use only letters, digits, "_" or "-". Try again.\n');
+    end
+end
+
+% Prompt for experiment day (positive integer)
+while true
+    dayStr = strtrim(input('Enter day of experiment (positive integer, e.g., 1): ', 's'));
+    dayNum = str2double(dayStr);
+    if ~isnan(dayNum) && isfinite(dayNum) && dayNum > 0 && mod(dayNum,1)==0
+        break;
+    else
+        fprintf('Invalid experiment day. Please enter a positive integer.\n');
+    end
+end
+
+% Prompt for session type ("experiment" or "training")
+while true
+    sessionIn = strtrim(lower(input('Enter session type ("experiment" or "training"): ', 's')));
+
+    % Accept common aliases
+    if any(strcmp(sessionIn, {'experiment','exp','e'}))
+        sessionType = 'experiment';
+        break;
+    elseif any(strcmp(sessionIn, {'training','train','t'}))
+        sessionType = 'training';
+        break;
+    else
+        fprintf(['Invalid session type. Please enter "experiment" or "training".\n' ...
+                 '(Accepted shortcuts: e/exp for experiment, t/train for training.)\n']);
+    end
+end
+
+% Compose NDJSON filename: YYYY-MM-DD_HHMM_mouse_<MOUSE>_day<DAY>_<SESSIONTYPE>.ndjson
+dateStr = char(datetime('now','TimeZone','local','Format','yyyy-MM-dd-HHmm'));
+logName   = sprintf('%s_%s_day%d_%s.ndjson', dateStr, mouseNumber, dayNum, sessionType);
+
+logPath   = fullfile(logFolder, logName);
+[logFID, msg] = fopen(logPath, 'a');
+assert(logFID > 0, 'Could not open log file: %s', msg);
+
+% --- Open per-trial stats NDJSON (_trial_stats.ndjson) ---------------
+trialStatsName = strrep(logName, '.ndjson', '_trial_stats.ndjson');
+trialStatsPath = fullfile(logFolder, trialStatsName);
+[trialStatsFID, msg2] = fopen(trialStatsPath, 'a');
+assert(trialStatsFID > 0, 'Could not open trial stats file: %s', msg2);
+
+S = BpodSystem.ProtocolSettings;
+if isempty(fieldnames(S))
+    S.GUI.N   = 80;   % trials correct
+    S.GUI.probLeft = 0.5; % prob for left side
+    S.GUI.reward_time = 0.350; % reward amount in time
+    S.GUI.wait_until_lick  = 5;
+end
+
+BpodParameterGUI('init', S);
+S = BpodParameterGUI('sync', S);
+
+%% --- Parameters -----------------------------------------------------------
+% Fallback regression (for center.x correction)
+slopeCenter      = -0.189810;
+interceptCenter  = 270.951015;
+xDiffThreshold   = 0.125;
+
+% Trials and timing
+led_time         = 0.0025;      % blink pulse width (s)
+led_voltage      = 5;
+led_hold_time    = led_time;   % "ON" hold time for side LED (reissued every frame to appear steady)
+frame_delay      = 0.0;        % main loop pacing
+bnc_pulse_time   = 0.0;        % BNC1 pulse at each acquisition step
+
+% Lanes (counter-clockwise indexing)
+laneAngles       = [0, 90, 180, 270];  % allowable lanes
+in_lane_x        = 835;                % threshold for "in lane" (front area)
+out_lane_x       = 720;
+
+% Lick/reward state machine timing
+wait_after_lick  = 1.5;     % ITI after lick detection
+retract_time     = 1.2;     % actuator retract time
+extend_time      = 1.35;    % actuator extend time
+
+% Failure / preprocessing rescue threshold (frames)
+detectionFailThreshold = 2;
+
+% Print bools
+print_coordinates = true;
+
+% ------------ Phase label helpers ----------------------------------------
+PHASE_A = 'OUT_OF_LANE';
+PHASE_B = 'RANDOM_ENTRY';
+PHASE_C = 'CUE_NEXT_LANE';
+PHASE_C2 = PHASE_C;           % keep existing logging lines working
+PHASE_LICK = 'LICK_DETECTION';
+
+%% --- Video setup ----------------------------------------------------------
+vid = videoinput('gentl', 1, 'Mono8');
+vid.FramesPerTrigger   = 1;
+vid.ReturnedColorspace = 'grayscale';
+vid.TriggerRepeat      = Inf;
+start(vid);
+fprintf('Video acquisition started.\n');
+
+
+
+%% --- Initial extend actuator then retract to semi-extended --------------
+fprintf('Current state: Initial extend \n');
+sma = NewStateMachine();
+
+sma = AddState(sma, 'Name', 'Extend', ...
+    'Timer', 5, ...
+    'StateChangeConditions', {'Tup', 'Retract'}, ...
+    'OutputActions', {'Flex3AO', 5, 'Flex4AO', 0, 'BNC2', 1});
+
+sma = AddState(sma, 'Name', 'Retract', ...
+    'Timer', retract_time, ...
+    'StateChangeConditions', {'Tup', 'exit'}, ...
+    'OutputActions', {'Flex3AO', 0, 'Flex4AO', 5, 'BNC2', 1});
+
+SendStateMatrix(sma);
+RunStateMachine();
+
+%% --- Set run start (start of trial 0) and write RUN_START log -----------
+% Set the canonical run start time here (this defines t=0)
+global RUN_START;
+RUN_START = datetime('now','TimeZone','local');
+
+%% --- Phase A: Ensure OUT of lane (center.x < in_lane_x) with BOTH LEDs blinking
+fprintf('\nPhase A — Ensuring OUT of lane (center.x < %.1f) with both LEDs blinking...\n', in_lane_x);
+trial = 0;  % pre-trial logging uses trial 0
+
+% Decide Left or Right relative to the LAST ENTERED lane (correct OR false)
+chooseLeft = (rand() < S.GUI.probLeft);
+
+while true
+    try
+        t = rel_time();                       % relative timestamp BEFORE frame capture (seconds)
+        frame_raw = getsnapshot(vid);
+
+        % BNC1 pulse
+        sma = NewStateMachine();
+        sma = AddState(sma, 'Name', 'BNC1_Pulse', 'Timer', bnc_pulse_time, ...
+            'StateChangeConditions', {'Tup','exit'}, 'OutputActions', {'BNC1',1});
+        SendStateMatrix(sma); RunStateMachine();
+
+        % CENTRALIZED detection + fallback + adaptive-preprocessing attempt
+        [center, angle, valid, used_preproc, marker_ids, marker_centers] = detectAndCompute(frame_raw, slopeCenter, interceptCenter, xDiffThreshold, detectionFailThreshold);
+
+
+        % Keep the chosen side LED ON (re-issue each cycle to appear steady)
+        if chooseLeft
+            sma_led = NewStateMachine();
+            sma_led = AddState(sma_led, 'Name', 'LED_Left_ON', 'Timer', led_hold_time, ...
+                'StateChangeConditions', {'Tup','exit'}, ...
+                'OutputActions', {'Flex1AO',led_voltage,  'BNC2', 1});
+            SendStateMatrix(sma_led); RunStateMachine();
+        else
+            sma_led = NewStateMachine();
+            sma_led = AddState(sma_led, 'Name', 'LED_Right_ON', 'Timer', led_hold_time, ...
+                'StateChangeConditions', {'Tup','exit'}, ...
+                'OutputActions', { 'Flex2AO',led_voltage, 'BNC2', 1});
+            SendStateMatrix(sma_led); RunStateMachine();
+        end
+
+
+        % NDJSON log for this frame (relative time 't')
+        write_ndjson(logFID, struct( ...
+            't',              t, ...
+            'phase',          PHASE_A, ...
+            'trial',          trial, ...
+            'valid',          logical(valid), ...
+            'x_center',       iff(valid, center(1), NaN), ...
+            'angle',          iff(valid, angle, NaN), ...
+            'used_preproc',   logical(used_preproc), ...
+            'marker_ids',     marker_ids, ...
+            'marker_centers', marker_centers ...
+        ));
+
+        if valid
+            if center(1) < in_lane_x
+                fprintf('OUT of lane confirmed. x=%.2f\n', center(1));
+                break;
+            else
+                fprintf('Still IN lane. x=%.2f\n', center(1));
+            end
+        else
+            if used_preproc
+                fprintf('Preprocessed frame was used but still no valid detection (OUT-OF-LANE phase).\n');
+            else
+                fprintf('No valid center found (OUT-OF-LANE phase).\n');
+            end
+        end
+
+        flushdata(vid);
+    catch ME
+        fprintf('Error in OUT-OF-LANE phase: %s\n', ME.message);
+    end
+    pause(frame_delay);
+end
+
+%% --- Phase B: Enter an INITIAL RANDOM lane with left LED blinking, doesn't matter which lane is chosen -------
+fprintf('\nPhase B — Enter initial RANDOM lane (left LED blinks until entry)\n');
+while true
+    try
+        t = rel_time();                       % relative timestamp BEFORE frame capture
+        frame_raw = getsnapshot(vid);
+
+        % BNC1 pulse
+        sma = NewStateMachine();
+        sma = AddState(sma, 'Name', 'BNC1_Pulse', 'Timer', bnc_pulse_time, ...
+            'StateChangeConditions', {'Tup','exit'}, 'OutputActions', {'BNC1',1});
+        SendStateMatrix(sma); RunStateMachine();
+
+        [center, angle, valid, used_preproc, marker_ids, marker_centers] = detectAndCompute(frame_raw, slopeCenter, interceptCenter, xDiffThreshold, detectionFailThreshold);
+
+        % Keep the chosen side LED ON (re-issue each cycle to appear steady)
+        if chooseLeft
+            sma_led = NewStateMachine();
+            sma_led = AddState(sma_led, 'Name', 'LED_Left_ON', 'Timer', led_hold_time, ...
+                'StateChangeConditions', {'Tup','exit'}, ...
+                'OutputActions', {'Flex1AO',led_voltage,  'BNC2', 1});
+            SendStateMatrix(sma_led); RunStateMachine();
+        else
+            sma_led = NewStateMachine();
+            sma_led = AddState(sma_led, 'Name', 'LED_Right_ON', 'Timer', led_hold_time, ...
+                'StateChangeConditions', {'Tup','exit'}, ...
+                'OutputActions', { 'Flex2AO',led_voltage, 'BNC2', 1});
+            SendStateMatrix(sma_led); RunStateMachine();
+        end
+
+
+
+
+        % NDJSON log for this frame
+        write_ndjson(logFID, struct( ...
+            't',              t, ...
+            'phase',          PHASE_B, ...
+            'trial',          trial, ...
+            'valid',          logical(valid), ...
+            'x_center',       iff(valid, center(1), NaN), ...
+            'angle',          iff(valid, angle, NaN), ...
+            'used_preproc',   logical(used_preproc), ...
+            'marker_ids',     marker_ids, ...
+            'marker_centers', marker_centers ...
+        ));
+
+        if valid && center(1) > in_lane_x
+            diffs = arrayfun(@(x) min(abs(angle - x), 360 - abs(angle - x)), laneAngles);
+            [~, ix] = min(diffs);
+            currentLane = laneAngles(ix);
+            fprintf('Lane=%d° (angle=%.2f°; x=%.2f)\n', currentLane, angle, center(1));
+            fprintf('Initial lane ENTERED.\n');
+            break;
+        else
+            if ~valid
+                if used_preproc
+                    fprintf('Preprocessed frame used; still invalid markers (random-lane phase).\n');
+                else
+                    fprintf('Random-lane phase: invalid markers.\n');
+                end
+            else
+                fprintf('x=%.2f below in-lane threshold while searching.\n', center(1));
+            end
+        end
+
+        flushdata(vid);
+    catch ME
+        fprintf('Error in random-lane entry: %s\n', ME.message);
+    end
+    pause(frame_delay);
+end
+
+% First reward using the SAME lick detection state machine after being in inital lane
+
+fprintf('\nReward 1 — Lick detection and reward at initial lane.\n');
+fprintf('Initiating lick detection (up to %.1f s)...\n', S.GUI.wait_until_lick);
+
+% Build state machine (same states and order as before)    'BNC1High','give_reward',
+sma_lick = NewStateMachine();
+sma_lick = AddState(sma_lick,'Name','Extend_actu','Timer',extend_time, ...
+    'StateChangeConditions',{'Tup','give_reward'}, ...
+    'OutputActions',{'Flex3AO',5, 'Flex4AO',0, 'BNC2', 1});
+
+sma_lick = AddState(sma_lick,'Name','give_reward','Timer',S.GUI.reward_time, ...
+    'StateChangeConditions',{'Tup','WaitForTTL'}, ...
+    'OutputActions',{'ValveState',1, 'Flex3AO',0, 'Flex4AO',0});
+
+sma_lick = AddState(sma_lick,'Name','WaitForTTL','Timer',S.GUI.wait_until_lick, ...
+    'StateChangeConditions',{'BNC1High','TTLDetected','Tup','NoTTLDetected'}, ...
+    'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+sma_lick = AddState(sma_lick,'Name','TTLDetected','Timer',0.01, ...
+    'StateChangeConditions',{'Tup','ITI'}, ...
+    'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+sma_lick = AddState(sma_lick,'Name','NoTTLDetected','Timer',0.01, ...
+    'StateChangeConditions',{'Tup','Retract_actu'}, ...
+    'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+sma_lick = AddState(sma_lick,'Name','ITI','Timer',wait_after_lick, ...
+    'StateChangeConditions',{'Tup','Retract_actu'}, ...
+    'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+sma_lick = AddState(sma_lick,'Name','Retract_actu','Timer',retract_time, ...
+    'StateChangeConditions',{'Tup','exit'}, ...
+    'OutputActions',{'Flex4AO',5, 'BNC2', 1});
+
+SendStateMatrix(sma_lick);
+RawEvents = RunStateMachine();
+
+
+% The NEXT target decisions will always be relative to the LAST ENTERED lane
+previous_lane = currentLane;
+
+%% --- Phase C: Trials with CORRECT/FALSE logic until N correct are achieved
+fprintf('\nPhase C — Run until %d CORRECT trials achieved (probLeft=%.2f)\n', S.GUI.N, S.GUI.probLeft);
+
+totalTrials   = 0;   % counts all trials (correct + false)
+correctCount  = 0;   % counts only correct trials
+
+while correctCount < S.GUI.N
+    S = BpodParameterGUI('sync', S);
+    totalTrials = totalTrials + 1;
+    trial = totalTrials;  % keep using field name 'trial' in frame logs
+    once_out_of_lane = false;
+
+    fprintf('\n=== Trial %d (correct so far: %d / %d) ===\n', totalTrials, correctCount, S.GUI.N);
+
+    % Decide Left or Right relative to the LAST ENTERED lane (correct OR false)
+    chooseLeft = (rand() < S.GUI.probLeft);
+    if chooseLeft
+        targetLane = neighborLane(previous_lane, +90);  % Left = +90° CCW
+        sideStr = 'LEFT';
+    else
+        targetLane = neighborLane(previous_lane, -90);  % Right = -90° CW
+        sideStr = 'RIGHT';
+    end
+    fprintf('Chosen side: %s → target lane %d° (relative to last entered %d°)\n', sideStr, targetLane, previous_lane);
+
+    % --- Cue next lane — side LED ON and wait until ANY lane is ENTERED ---
+    fprintf('Cueing %s — waiting to ENTER ANY lane (will score correct if %d° is entered)\n', sideStr, targetLane);
+
+    t_trial_start = rel_time();
+    enteredLane   = NaN;
+    enteredAngle  = NaN;
+
+    while true
+        try
+            t = rel_time();                    % relative timestamp BEFORE frame capture
+            frame_raw = getsnapshot(vid);
+
+            % BNC1 pulse
+            sma = NewStateMachine();
+            sma = AddState(sma, 'Name', 'BNC1_Pulse', 'Timer', bnc_pulse_time, ...
+                'StateChangeConditions', {'Tup','exit'}, 'OutputActions', {'BNC1',1});
+            SendStateMatrix(sma); RunStateMachine();
+
+            % Keep the chosen side LED ON (re-issue each cycle to appear steady)
+            if chooseLeft
+                sma_led = NewStateMachine();
+                sma_led = AddState(sma_led, 'Name', 'LED_Left_ON', 'Timer', led_hold_time, ...
+                    'StateChangeConditions', {'Tup','exit'}, ...
+                    'OutputActions', {'Flex1AO',led_voltage,  'BNC2', 1});
+                SendStateMatrix(sma_led); RunStateMachine();
+            else
+                sma_led = NewStateMachine();
+                sma_led = AddState(sma_led, 'Name', 'LED_Right_ON', 'Timer', led_hold_time, ...
+                    'StateChangeConditions', {'Tup','exit'}, ...
+                    'OutputActions', {'Flex2AO',led_voltage, 'BNC2', 1});
+                SendStateMatrix(sma_led); RunStateMachine();
+            end
+
+            [center, angle, valid, used_preproc, marker_ids, marker_centers] = detectAndCompute(frame_raw, slopeCenter, interceptCenter, xDiffThreshold, detectionFailThreshold);
+
+            % NDJSON log for this frame (cue/entry phase)
+            write_ndjson(logFID, struct( ...
+                't',              t, ...
+                'phase',          PHASE_C2, ...
+                'trial',          trial, ...
+                'valid',          logical(valid), ...
+                'x_center',       iff(valid, center(1), NaN), ...
+                'angle',          iff(valid, angle, NaN), ...
+                'used_preproc',   logical(used_preproc), ...
+                'target_lane',    targetLane, ...
+                'prev_lane',      previous_lane, ...
+                'marker_ids',     marker_ids, ...
+                'marker_centers', marker_centers ...
+            ));
+
+            % --- NEW: End trial upon entry into ANY lane -------------------
+            if valid && center(1) < out_lane_x && ~once_out_of_lane
+                once_out_of_lane = true;
+            end
+
+            if valid && center(1) > in_lane_x
+                diffs = arrayfun(@(x) min(abs(angle - x), 360 - abs(angle - x)), laneAngles);
+                [~, ix] = min(diffs);
+                enteredLane  = laneAngles(ix);
+                enteredAngle = angle;
+                fprintf('Entered lane candidate=%d° (angle=%.2f°; x=%.2f)\n', enteredLane, angle, center(1));
+
+                if once_out_of_lane
+
+                    break;  % end the trial here regardless of correctness if new lane
+                end
+            else
+                if ~valid
+                    if used_preproc
+                        fprintf('Preprocessed frame used; still invalid markers (cue phase).\n');
+                    else
+                        fprintf('Cue phase: invalid markers.\n');
+                    end
+                else
+                    fprintf('Cue phase: x=%.2f ≤ %.1f\n', center(1), in_lane_x);
+                end
+            end
+
+            flushdata(vid);
+        catch ME
+            fprintf('Error while cueing/entering lane: %s\n', ME.message);
+        end
+        pause(frame_delay);
+    end
+
+    % --- Score trial, optionally deliver reward, log per-trial stats ------
+    t_trial_end   = rel_time();
+    trialDuration = t_trial_end - t_trial_start;
+    isCorrect     = (~isnan(enteredLane) && enteredLane == targetLane);
+
+    if isCorrect
+        correctCount = correctCount + 1;
+        fprintf('TRIAL %d RESULT: CORRECT (entered %d° == target %d°). Duration %.3f s\n', totalTrials, enteredLane, targetLane, trialDuration);
+        % Reward only on correct
+        fprintf('Reward — Lick detection and reward at lane %d°.\n', enteredLane);
+
+        fprintf('Initiating lick detection (up to %.1f s)...\n', S.GUI.wait_until_lick);
+
+        % Build state machine (same states and order as before)    'BNC1High','give_reward',
+        sma_lick = NewStateMachine();
+        sma_lick = AddState(sma_lick,'Name','Extend_actu','Timer',extend_time, ...
+            'StateChangeConditions',{'Tup','give_reward'}, ...
+            'OutputActions',{'Flex3AO',5, 'Flex4AO',0, 'BNC2', 1});
+
+        sma_lick = AddState(sma_lick,'Name','give_reward','Timer',S.GUI.reward_time, ...
+            'StateChangeConditions',{'Tup','WaitForTTL'}, ...
+            'OutputActions',{'ValveState',1, 'Flex3AO',0, 'Flex4AO',0});
+
+        sma_lick = AddState(sma_lick,'Name','WaitForTTL','Timer',S.GUI.wait_until_lick, ...
+            'StateChangeConditions',{'BNC1High','TTLDetected','Tup','NoTTLDetected'}, ...
+            'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+        sma_lick = AddState(sma_lick,'Name','TTLDetected','Timer',0.01, ...
+            'StateChangeConditions',{'Tup','ITI'}, ...
+            'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+        sma_lick = AddState(sma_lick,'Name','NoTTLDetected','Timer',0.01, ...
+            'StateChangeConditions',{'Tup','Retract_actu'}, ...
+            'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+        sma_lick = AddState(sma_lick,'Name','ITI','Timer',wait_after_lick, ...
+            'StateChangeConditions',{'Tup','Retract_actu'}, ...
+            'OutputActions',{'Flex3AO',0, 'Flex4AO',0});
+
+        sma_lick = AddState(sma_lick,'Name','Retract_actu','Timer',retract_time, ...
+            'StateChangeConditions',{'Tup','exit'}, ...
+            'OutputActions',{'Flex4AO',5, 'BNC2', 1});
+
+        SendStateMatrix(sma_lick);
+        RawEvents = RunStateMachine();
+
+    else
+        fprintf('TRIAL %d RESULT: FALSE (entered %d° != target %d°). Duration %.3f s (no reward)\n', totalTrials, enteredLane, targetLane, trialDuration);
+    end
+
+    % Write one NDJSON line per trial into the _trial_stats file
+    write_ndjson(trialStatsFID, struct( ...
+        'trial_total',     totalTrials, ...
+        'solved',          logical(isCorrect), ...
+        'total_time_s',    trialDuration, ...
+        'turn_direction',  sideStr, ...
+        'target_lane_deg', targetLane, ...
+        'entered_lane_deg',enteredLane ...
+    ));
+
+    % For next decision, ALWAYS base on the lane that was actually ENTERED
+    previous_lane = enteredLane;
+
+    % Report running correct rate
+    correctRate = correctCount / totalTrials;
+    fprintf('Running correct rate: %.1f%%  (correct=%d / total=%d)\n', 100*correctRate, correctCount, totalTrials);
+end
+
+%% --- Cleanup: Final retract, stop video ----------------------------------
+fprintf('\nReached %d correct trials in %d total trials (%.1f%% correct). - correct trial number is wrong if changed in GUI to stop \n', correctCount, totalTrials, 100*correctCount/totalTrials);
+
+fprintf('\nCurrent state: Final Retract \n');
+
+sma = NewStateMachine();
+
+sma = AddState(sma, 'Name', 'Retract', ...
+    'Timer', retract_time, ...
+    'StateChangeConditions', {'Tup', 'exit'}, ...
+    'OutputActions', {'Flex4AO', 5, 'BNC2', 1});
+
+SendStateMatrix(sma);
+RunStateMachine();
+
+stop(vid); delete(vid); clear vid;
+
+fclose(logFID);
+fclose(trialStatsFID);
+
+fprintf('\nExperiment complete. Resources released.\nLog written to: %s\n', logPath);
+fprintf('Per-trial stats written to: %s\n', trialStatsPath);
+
+
+
+
+%% ===================== Helper Functions ==================================
+function laneOut = neighborLane(currentLane, deltaDeg)
+    lanes = [0, 90, 180, 270];
+    laneTarget = mod(currentLane + deltaDeg, 360);
+    diffs = arrayfun(@(x) min(abs(laneTarget - x), 360 - abs(laneTarget - x)), lanes);
+    [~, ix] = min(diffs);
+    laneOut = lanes(ix);
+end
+
+function [center, angle, valid] = originalPairFallback(ids, locs)
+    center = [NaN, NaN]; angle = NaN; valid = false;
+    idx1 = find(ids==1, 1); idx2 = find(ids==2, 1);
+    if ~isempty(idx1) && ~isempty(idx2)
+        p1 = mean(locs(:,:,idx1), 1); p2 = mean(locs(:,:,idx2), 1);
+        center = (p1 + p2)/2; v = p2 - p1;
+        angle  = mod(atan2(v(2), v(1))*180/pi + 45, 360);
+        valid  = true; return;
+    end
+    idx3 = find(ids==3, 1); idx4 = find(ids==4, 1);
+    if ~isempty(idx3) && ~isempty(idx4)
+        p1 = mean(locs(:,:,idx3), 1); p2 = mean(locs(:,:,idx4), 1);
+        center = (p1 + p2)/2; v = p2 - p1;
+        angle  = mod(atan2(v(2), v(1))*180/pi + 45 - 90, 360);
+        valid  = true; return;
+    end
+end
+
+
+
+%% --- Fallback Function Definition (with pair-specific Y-order checks) ----
+function [center, angle, valid] = computeFallbackCenterAngle(ids, locs, slopeC, interceptC, xThresh)
+    fprintf('fallback start \n')
+    center = [NaN, NaN];
+    angle = NaN;
+    valid = false;
+
+    idsList = unique(ids)';                 % unique detected IDs
+    if numel(idsList) < 2, return; end      % need at least two IDs
+
+    % Build [id, x, y] using the FIRST occurrence of each ID (as in original)
+    posMap = nan(numel(idsList),3);
+    for k = 1:numel(idsList)
+        idk = idsList(k);
+        idx = find(ids == idk, 1);          % first index with this ID
+        p = mean(locs(:,:,idx), 1);         % average over samples -> [x,y]
+        posMap(k,:) = [idk, p];
+    end
+
+    % Take the two leftmost by x
+    posMap = sortrows(posMap, 2);
+    low1 = posMap(1,:); low2 = posMap(2,:);
+    pa_x = low1(2); pa_y = low1(3);
+    pb_x = low2(2); pb_y = low2(3);
+
+    % Require similar x (vertical-ish pair)
+    if abs(pa_x - pb_x) / max(pa_x, pb_x) > xThresh, return; end
+
+    % Identify the pair by sorted IDs
+    ids_pair = sort([low1(1), low2(1)]);
+    a = ids_pair(1); b = ids_pair(2);
+
+    % Get positions for those IDs again (as in original)
+    idxA = find(ids == a, 1);
+    idxB = find(ids == b, 1);
+    posA = mean(locs(:,:,idxA), 1);   % [xA, yA]
+    posB = mean(locs(:,:,idxB), 1);   % [xB, yB]
+
+    % Base heading from A -> B (degrees)
+    base = atan2(posB(2) - posA(2), posB(1) - posA(1)) * 180 / pi;
+
+    % --- Pair-specific Y ordering constraints & offsets ---
+    if isequal(ids_pair, [1 3])
+        y_ok = (posB(2) < posA(2));     off  = 90;
+    elseif isequal(ids_pair, [2 3])
+        y_ok = (posA(2) < posB(2));     off  = 180;
+    elseif isequal(ids_pair, [2 4])
+        y_ok = (posB(2) < posA(2));     off  = -90;
+    elseif isequal(ids_pair, [1 4])
+        y_ok = (posA(2) < posB(2));     off  = 0;
+    else
+        return;  % not whitelisted
+    end
+    if ~y_ok, return; end
+
+    % Compute rough center (linear x-correction + mean y)
+    mx = mean([pa_x, pb_x]);
+    cx = slopeC * mx + interceptC + mx;
+    cy = mean([pa_y, pb_y]);
+    center = [cx, cy];
+
+    angle = mod(base + off, 360);
+    valid = true;
+end
+
+%% --- NEW: Centralized detection routine with adaptive-preprocessing rescue
+function [center, angle, valid, used_preproc, marker_ids, marker_centers] = detectAndCompute(frame_input, slopeC, interceptC, xThresh, failThreshold)
+    % Attempts to detect ArUco markers and compute center/angle (with fallbacks).
+    % Returns per-marker centers as well.
+    persistent failCount
+    if isempty(failCount)
+        failCount = 0;
+    end
+    if nargin < 5
+        failThreshold = 2;
+    end
+
+    used_preproc = false;
+    center = [NaN, NaN]; angle = NaN; valid = false;
+    marker_ids = []; marker_centers = [];
+
+    % Primary detection attempt on raw frame
+    try
+        [ids, locs] = readArucoMarker(frame_input, 'DICT_7X7_50');
+    catch ME
+        fprintf('readArucoMarker error on raw frame: %s\n', ME.message);
+        ids = []; locs = [];
+    end
+
+    if ~isempty(ids)
+        % compute marker centers (mean of corner points) for logging
+        try
+            nIds = numel(ids);
+            centers = nan(nIds,2);
+            for ii = 1:nIds
+                c = mean(locs(:,:,ii), 1);   % mean of corners -> [x,y]
+                centers(ii,:) = c;
+            end
+            marker_ids = ids(:)';               % row vector
+            marker_centers = centers;           % Nx2
+        catch
+            marker_ids = ids(:)';
+            marker_centers = [];
+        end
+
+        [center, angle, valid] = computeFallbackCenterAngle(ids, locs, slopeC, interceptC, xThresh);
+        if ~valid
+            [center, angle, valid] = originalPairFallback(ids, locs);
+        end
+    end
+
+    if valid
+        % Successful detection; reset fail counter
+        failCount = 0;
+        return;
+    end
+
+    % Not valid: increment fail counter and maybe try preprocessing rescue
+    failCount = failCount + 1;
+    fprintf('No valid center/lane detected (consecutive failures: %d)\n', failCount);
+
+    if failCount >= failThreshold
+        % Attempt rescue with adaptive histogram equalization
+        used_preproc = true;
+        fprintf('Applying adapthisteq preprocessing after %d failures.\n', failCount);
+        try
+            frame_norm = frame_input;  % assume grayscale uint8 or normalized float
+            frame_pre = adapthisteq(frame_norm, 'NumTiles', [8 8], 'ClipLimit', 0.02, 'Distribution', 'rayleigh');
+
+            try
+                [ids2, locs2] = readArucoMarker(frame_pre, 'DICT_7X7_50');
+            catch ME2
+                fprintf('readArucoMarker error on preprocessed frame: %s\n', ME2.message);
+                ids2 = []; locs2 = [];
+            end
+
+            if ~isempty(ids2)
+                % compute marker centers for preprocessed detection
+                try
+                    nIds2 = numel(ids2);
+                    centers2 = nan(nIds2,2);
+                    for ii = 1:nIds2
+                        c = mean(locs2(:,:,ii), 1);
+                        centers2(ii,:) = c;
+                    end
+                    marker_ids = ids2(:)';
+                    marker_centers = centers2;
+                catch
+                    marker_ids = ids2(:)';
+                    marker_centers = [];
+                end
+
+                [center, angle, valid] = computeFallbackCenterAngle(ids2, locs2, slopeC, interceptC, xThresh);
+                if ~valid
+                    [center, angle, valid] = originalPairFallback(ids2, locs2);
+                end
+            end
+
+            if valid
+                fprintf('Preprocessing rescued detection. Resetting fail counter.\n');
+                failCount = 0;
+                return;
+            else
+                fprintf('Preprocessing attempted but did not rescue detection.\n');
+            end
+        catch MEp
+            fprintf('Error during preprocessing attempt: %s\n', MEp.message);
+            % leave failCount unchanged
+        end
+    end
+end
+
+%% --- NDJSON helpers -------------------------------------------------------
+function write_ndjson(fid, s)
+    try
+        line = jsonencode(s);
+    catch ME
+        warn = struct('t', rel_time(), 'phase', 'LOG_WARN', 'trial', 0, 'message', ME.message);
+        line = jsonencode(warn);
+    end
+    fprintf(fid, '%s\n', line);
+end
+
+function t = rel_time()
+    % Return seconds (double) since RUN_START
+    global RUN_START;
+    if isempty(RUN_START)
+        error('RUN_START is not set. rel_time() requires RUN_START to be defined before logging.');
+    end
+    t = seconds(datetime('now','TimeZone','local') - RUN_START);
+end
+
+function v = iff(cond, a, b)
+    if cond, v = a; else, v = b; end
+end
