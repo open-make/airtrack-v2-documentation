@@ -5,7 +5,26 @@ Look there for more information on the context where this part was designed,
 as well as get information on the developers and the community.
 
 
-### hardware part summary overview
+### Hardware part summary overview
+
+To use the Basler cameras with PylonRecorder a .pfs file needs to be saved at some location to be pulled when PylonRecorder connects to a camera.
+
+To get the cameras .pfs file, one need to select all desired settings and then receive a .pfs file via "Save preferences" in the xxx tab.
+
+Most important settins:
+
+In xxxx: 
+
+- TriggerMode to "On"
+- TriggerLine to "Line3" -> GPIO input
+- Frame rate
+
+
+In xxxxx: 
+
+- total x and y width
+- x and y shift 
+
 
 ### Standard compliance
 
@@ -36,7 +55,7 @@ For the software part, indicate the main component, use a dependency.txt files i
 
 ## electrical design
 
-## firmware/Software: Documentation of different parts
+## Firmware/Software: Documentation of different parts
 
 ## Manufacturing instructions
 

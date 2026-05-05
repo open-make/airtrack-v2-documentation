@@ -5,7 +5,15 @@ Look there for more information on the context where this part was designed,
 as well as get information on the developers and the community.
 
 
-### hardware part summary overview
+### Hardware part summary overview
+
+After successful experiments with the Airtrack follows the analysis. To extract all required data from the videos Sleap AI was used. Sleap AI allows you to train custom neural networks for object detection. 
+
+Examples to track with Sleap AI:
+
+- Pupils size and movements
+- Whisker movements
+- Aruco Markers
 
 ### Standard compliance
 
